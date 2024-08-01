@@ -8,14 +8,20 @@ const height = window.innerHeight
 const boardSize = 20 // Ajuste o tamanho do grid para o chão
 
 // Cria a cena
-app.createScene(width, height, boardSize)
+app.createScene({ width, height, boardSize })
 
 // Adiciona o chão à cena
-app.addGround(boardSize, boardSize, '#d5ded9', '#838689', 2)
+app.addGround({
+  rows: boardSize,
+  cols: boardSize,
+  material: '#d5ded9',
+  stroke: '#838689',
+  strokeWidth: 2,
+})
 
 // Adiciona um tile e um bloco para demonstração
-app.addTile(3, 3, 'blue')
-app.addBlock(boardSize / 2, boardSize / 2, 1, 'red')
+app.addTile({ x: 3, y: 3, material: 'blue' })
+app.addBlock({ x: boardSize / 2, y: boardSize / 2, z: 1, material: 'red' })
 
 // Funções de manipulação de elementos
 // app.removeElement(block)

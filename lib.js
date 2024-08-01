@@ -73,7 +73,7 @@ function setupZoomAndDrag(svg, scene) {
   svg.addEventListener('mouseleave', onMouseUp)
 }
 
-function createScene(width, height, boardSize) {
+function createScene({ width, height, boardSize }) {
   const size = Math.min(width / boardSize, (2 * height) / boardSize)
   const origin = [width * 0.5 - boardSize * 0.5 * size, height * 0.5]
 
@@ -106,11 +106,7 @@ function _createElementNS(tag, attributes) {
 
 function addTile(
   scene,
-  x,
-  y,
-  material = 'lightgrey',
-  stroke = 'none',
-  strokeWidth = 0
+  { x, y, material = 'lightgrey', stroke = 'none', strokeWidth = 0 }
 ) {
   const points = `
     0,0 
@@ -129,7 +125,7 @@ function addTile(
   scene.elements.push(tile)
 }
 
-function _addWall(scene, points, coord, material) {
+function _addWall(scene, { points, coord, material }) {
   const wall = _createElementNS('polygon', {
     points,
     fill: material,
@@ -140,26 +136,26 @@ function _addWall(scene, points, coord, material) {
   scene.elements.push(wall)
 }
 
-function _addLeftWall(scene, x, y, z, material) {
+function _addLeftWall(scene, { x, y, z, material }) {
   const points = `0,0 
     0,${-z * scene.size * 0.5} 
     ${scene.size * 0.5},${-z * scene.size * 0.5 + scene.size * 0.25}
     ${scene.size * 0.5},${scene.size * 0.25}`
   const coord = _getCoord(scene, x, y)
-  _addWall(scene, points, coord, material)
+  _addWall(scene, { points, coord, material })
 }
 
-function _addRightWall(scene, x, y, z, material) {
+function _addRightWall(scene, { x, y, z, material }) {
   const points = `
     ${scene.size * 0.5},${scene.size * 0.25} 
     ${scene.size * 0.5},${scene.size * 0.25 - z * scene.size * 0.5} 
     ${scene.size},${-z * scene.size * 0.5}
     ${scene.size},0`
   const coord = _getCoord(scene, x, y)
-  _addWall(scene, points, coord, material)
+  _addWall(scene, { points, coord, material })
 }
 
-function _addTop(scene, x, y, z, material) {
+function _addTop(scene, { x, y, z, material }) {
   const points = `0,0 
     ${scene.size * 0.5},${-scene.size * 0.25} 
     ${scene.size},0 
@@ -177,10 +173,10 @@ function _addTop(scene, x, y, z, material) {
   scene.elements.push(tile)
 }
 
-function addBlock(scene, x, y, z, material = 'grey') {
-  _addLeftWall(scene, x, y, z, material)
-  _addRightWall(scene, x, y, z, material)
-  _addTop(scene, x, y, z, material)
+function addBlock(scene, { x, y, z, material = 'grey' }) {
+  _addLeftWall(scene, { x, y, z, material })
+  _addRightWall(scene, { x, y, z, material })
+  _addTop(scene, { x, y, z, material })
 }
 
 function removeElement(scene, element) {
@@ -195,15 +191,11 @@ function clearScene(scene) {
 
 export function addGround(
   scene,
-  rows,
-  cols,
-  material = 'lightgrey',
-  stroke = 'none',
-  strokeWidth = 0
+  { rows, cols, material = 'lightgrey', stroke = 'none', strokeWidth = 0 }
 ) {
   for (let x = 0; x < rows; x++) {
     for (let y = 0; y < cols; y++) {
-      addTile(scene, x, y, material, stroke, strokeWidth)
+      addTile(scene, { x, y, material, stroke, strokeWidth })
     }
   }
 }
@@ -212,23 +204,20 @@ export function IsoApp() {
   let scene = null
 
   return {
-    createScene: (width, height, boardSize) => {
-      scene = createScene(width, height, boardSize)
+    createScene: ({ width, height, boardSize }) => {
+      scene = createScene({ width, height, boardSize })
       return scene
     },
-    addTile: (x, y, material, stroke, strokeWidth) =>
-      addTile(scene, x, y, material, stroke, strokeWidth),
-    addBlock: (x, y, z, material) => addBlock(scene, x, y, z, material),
-    addLeftWall: (x, y, z, material) => _addLeftWall(scene, x, y, z, material),
-    addRightWall: (x, y, z, material) =>
-      _addRightWall(scene, x, y, z, material),
-    addTop: (x, y, z, material) => _addTop(scene, x, y, z, material),
+    addTile: params => addTile(scene, params),
+    addBlock: params => addBlock(scene, params),
+    addLeftWall: params => _addLeftWall(scene, params),
+    addRightWall: params => _addRightWall(scene, params),
+    addTop: params => _addTop(scene, params),
     removeElement: element => removeElement(scene, element),
     clearScene: () => clearScene(scene),
     getCoord: (x, y) => _getCoord(scene, x, y),
     getScene: () => scene,
     getSvg: () => scene?.svg,
-    addGround: (rows, cols, material, stroke, strokeWidth) =>
-      addGround(scene, rows, cols, material, stroke, strokeWidth),
+    addGround: params => addGround(scene, params),
   }
 }
