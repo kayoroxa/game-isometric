@@ -200,7 +200,7 @@ export function addGround(
   }
 }
 
-export function IsoApp() {
+function IsoApp() {
   let scene = null
 
   return {
@@ -221,3 +221,5 @@ export function IsoApp() {
     addGround: params => addGround(scene, params),
   }
 }
+
+export { IsoApp }
