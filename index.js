@@ -21,7 +21,14 @@ app.addGround({
 
 // Adiciona um tile e um bloco para demonstração
 app.addTile({ x: 3, y: 3, material: 'blue' })
-app.addBlock({ x: boardSize / 2, y: boardSize / 2, z: 1, material: 'red' })
+app.addBlock({
+  x: 0,
+  y: 1,
+  z: 1,
+  material: 'rgb(255, 66, 66)',
+  stroke: 'rgba(0, 0, 0, 0.2)',
+  strokeWidth: 2,
+})
 
 // Funções de manipulação de elementos
 // app.removeElement(block)

@@ -1,3 +1,4 @@
+// index.js
 const IsometricNS = 'http://www.w3.org/2000/svg'
 
 function setupZoomAndDrag(svg, scene) {
@@ -125,37 +126,38 @@ function addTile(
   scene.elements.push(tile)
 }
 
-function _addWall(scene, { points, coord, material }) {
+function _addWall(scene, { points, coord, material, stroke, strokeWidth }) {
   const wall = _createElementNS('polygon', {
     points,
     fill: material,
-    stroke: material,
+    stroke: stroke,
+    'stroke-width': strokeWidth,
   })
   wall.style.transform = `translate(${coord[0]}px,${coord[1]}px)`
   scene.svg.appendChild(wall)
   scene.elements.push(wall)
 }
 
-function _addLeftWall(scene, { x, y, z, material }) {
+function _addLeftWall(scene, { x, y, z, material, stroke, strokeWidth }) {
   const points = `0,0 
     0,${-z * scene.size * 0.5} 
     ${scene.size * 0.5},${-z * scene.size * 0.5 + scene.size * 0.25}
     ${scene.size * 0.5},${scene.size * 0.25}`
   const coord = _getCoord(scene, x, y)
-  _addWall(scene, { points, coord, material })
+  _addWall(scene, { points, coord, material, stroke, strokeWidth })
 }
 
-function _addRightWall(scene, { x, y, z, material }) {
+function _addRightWall(scene, { x, y, z, material, stroke, strokeWidth }) {
   const points = `
     ${scene.size * 0.5},${scene.size * 0.25} 
     ${scene.size * 0.5},${scene.size * 0.25 - z * scene.size * 0.5} 
     ${scene.size},${-z * scene.size * 0.5}
     ${scene.size},0`
   const coord = _getCoord(scene, x, y)
-  _addWall(scene, { points, coord, material })
+  _addWall(scene, { points, coord, material, stroke, strokeWidth })
 }
 
-function _addTop(scene, { x, y, z, material }) {
+function _addTop(scene, { x, y, z, material, stroke, strokeWidth }) {
   const points = `0,0 
     ${scene.size * 0.5},${-scene.size * 0.25} 
     ${scene.size},0 
@@ -164,7 +166,8 @@ function _addTop(scene, { x, y, z, material }) {
   const tile = _createElementNS('polygon', {
     points,
     fill: material,
-    stroke: material,
+    stroke: stroke,
+    'stroke-width': strokeWidth,
   })
   tile.style.transform = `translate(${coord[0]}px,${
     coord[1] - z * scene.size * 0.5
@@ -173,10 +176,13 @@ function _addTop(scene, { x, y, z, material }) {
   scene.elements.push(tile)
 }
 
-function addBlock(scene, { x, y, z, material = 'grey' }) {
-  _addLeftWall(scene, { x, y, z, material })
-  _addRightWall(scene, { x, y, z, material })
-  _addTop(scene, { x, y, z, material })
+function addBlock(
+  scene,
+  { x, y, z, material = 'grey', stroke = 'black', strokeWidth = 2 }
+) {
+  _addLeftWall(scene, { x, y, z, material, stroke, strokeWidth })
+  _addRightWall(scene, { x, y, z, material, stroke, strokeWidth })
+  _addTop(scene, { x, y, z, material, stroke, strokeWidth })
 }
 
 function removeElement(scene, element) {
@@ -200,7 +206,7 @@ export function addGround(
   }
 }
 
-function IsoApp() {
+export function IsoApp() {
   let scene = null
 
   return {
@@ -221,5 +227,3 @@ function IsoApp() {
     addGround: params => addGround(scene, params),
   }
 }
-
-export { IsoApp }
