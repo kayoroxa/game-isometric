@@ -11,7 +11,7 @@ const boardSize = 20 // Ajuste o tamanho do grid para o chão
 app.createScene(width, height, boardSize)
 
 // Adiciona o chão à cena
-app.addGround(boardSize, boardSize)
+app.addGround(boardSize, boardSize, '#d5ded9', '#838689', 2)
 
 // Adiciona um tile e um bloco para demonstração
 app.addTile(3, 3, 'blue')

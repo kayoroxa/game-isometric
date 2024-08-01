@@ -104,13 +104,25 @@ function _createElementNS(tag, attributes) {
   return element
 }
 
-function addTile(scene, x, y, material = 'lightgrey') {
+function addTile(
+  scene,
+  x,
+  y,
+  material = 'lightgrey',
+  stroke = 'none',
+  strokeWidth = 0
+) {
   const points = `
     0,0 
     ${scene.size * 0.5},${-scene.size * 0.25} 
     ${scene.size},0 
     ${scene.size * 0.5},${scene.size * 0.25}`
-  const tile = _createElementNS('polygon', { points, fill: material })
+  const tile = _createElementNS('polygon', {
+    points,
+    fill: material,
+    stroke: stroke,
+    'stroke-width': strokeWidth,
+  })
   const coord = _getCoord(scene, x, y)
   tile.style.transform = `translate(${coord[0]}px,${coord[1]}px)`
   scene.svg.appendChild(tile)
@@ -181,10 +193,17 @@ function clearScene(scene) {
   scene.elements = []
 }
 
-export function addGround(scene, rows, cols, material = 'lightgrey') {
+export function addGround(
+  scene,
+  rows,
+  cols,
+  material = 'lightgrey',
+  stroke = 'none',
+  strokeWidth = 0
+) {
   for (let x = 0; x < rows; x++) {
     for (let y = 0; y < cols; y++) {
-      addTile(scene, x, y, material)
+      addTile(scene, x, y, material, stroke, strokeWidth)
     }
   }
 }
@@ -197,7 +216,8 @@ export function IsoApp() {
       scene = createScene(width, height, boardSize)
       return scene
     },
-    addTile: (x, y, material) => addTile(scene, x, y, material),
+    addTile: (x, y, material, stroke, strokeWidth) =>
+      addTile(scene, x, y, material, stroke, strokeWidth),
     addBlock: (x, y, z, material) => addBlock(scene, x, y, z, material),
     addLeftWall: (x, y, z, material) => _addLeftWall(scene, x, y, z, material),
     addRightWall: (x, y, z, material) =>
@@ -208,6 +228,7 @@ export function IsoApp() {
     getCoord: (x, y) => _getCoord(scene, x, y),
     getScene: () => scene,
     getSvg: () => scene?.svg,
-    addGround: (...prop) => addGround(scene, ...prop),
+    addGround: (rows, cols, material, stroke, strokeWidth) =>
+      addGround(scene, rows, cols, material, stroke, strokeWidth),
   }
 }
