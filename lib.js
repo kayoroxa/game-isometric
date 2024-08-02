@@ -1,4 +1,5 @@
 // index.js
+
 const IsometricNS = 'http://www.w3.org/2000/svg'
 
 function setupZoomAndDrag(svg, scene) {
@@ -87,7 +88,30 @@ function createScene({ width, height, boardSize }) {
   // Configure zoom and drag
   setupZoomAndDrag(svg, { width, height, size, origin })
 
-  return { width, height, boardSize, size, origin, svg, elements: [] }
+  return {
+    width,
+    height,
+    boardSize,
+    size,
+    origin,
+    svg,
+    elements: [],
+
+    addElement(element) {
+      this.svg.appendChild(element)
+      this.elements.push(element)
+    },
+
+    removeElement(element) {
+      this.svg.removeChild(element)
+      this.elements = this.elements.filter(el => el !== element)
+    },
+
+    clear() {
+      this.elements.forEach(el => this.svg.removeChild(el))
+      this.elements = []
+    },
+  }
 }
 
 function _getCoord(scene, x, y) {
@@ -105,7 +129,7 @@ function _createElementNS(tag, attributes) {
   return element
 }
 
-function addTile(
+function createTile(
   scene,
   { x, y, material = 'lightgrey', stroke = 'none', strokeWidth = 0 }
 ) {
@@ -122,87 +146,172 @@ function addTile(
   })
   const coord = _getCoord(scene, x, y)
   tile.style.transform = `translate(${coord[0]}px,${coord[1]}px)`
-  scene.svg.appendChild(tile)
-  scene.elements.push(tile)
+  return {
+    element: tile,
+    addToScene() {
+      scene.addElement(tile)
+    },
+    removeFromScene() {
+      scene.removeElement(tile)
+    },
+  }
 }
 
-function _addWall(scene, { points, coord, material, stroke, strokeWidth }) {
+function createBlock(scene, params) {
+  params.strokeWidth = params.strokeWidth || 2
+  params.stroke = params.stroke || 'black'
+  params.material = params.material || 'grey'
+
+  const leftWall = createWall(scene, {
+    ...params,
+    type: 'left',
+  })
+  const rightWall = createWall(scene, {
+    ...params,
+    type: 'right',
+  })
+  const top = createWall(scene, {
+    ...params,
+    type: 'top',
+  })
+
+  let me = {
+    elements: [leftWall.element, rightWall.element, top.element],
+    addToScene() {
+      leftWall.addToScene()
+      rightWall.addToScene()
+      top.addToScene()
+    },
+    removeFromScene() {
+      leftWall.removeFromScene()
+      rightWall.removeFromScene()
+      top.removeFromScene()
+    },
+    params,
+  }
+
+  me.update = callBackParams => {
+    me.removeFromScene()
+    me = createBlock(scene, { ...me.params, ...callBackParams(me.params) })
+    me.addToScene()
+  }
+
+  return me
+}
+
+function createWall(scene, { x, y, z, material, stroke, strokeWidth, type }) {
+  let points
+  switch (type) {
+    case 'left':
+      points = `0,0 
+        0,${-z * scene.size * 0.5} 
+        ${scene.size * 0.5},${-z * scene.size * 0.5 + scene.size * 0.25}
+        ${scene.size * 0.5},${scene.size * 0.25}`
+      break
+    case 'right':
+      points = `
+        ${scene.size * 0.5},${scene.size * 0.25} 
+        ${scene.size * 0.5},${scene.size * 0.25 - z * scene.size * 0.5} 
+        ${scene.size},${-z * scene.size * 0.5}
+        ${scene.size},0`
+      break
+    case 'top':
+      points = `0,0 
+        ${scene.size * 0.5},${-scene.size * 0.25} 
+        ${scene.size},0 
+        ${scene.size * 0.5},${scene.size * 0.25}`
+      break
+  }
+  const coord = _getCoord(scene, x, y)
   const wall = _createElementNS('polygon', {
     points,
     fill: material,
     stroke: stroke,
     'stroke-width': strokeWidth,
   })
-  wall.style.transform = `translate(${coord[0]}px,${coord[1]}px)`
-  scene.svg.appendChild(wall)
-  scene.elements.push(wall)
+  if (type === 'top') {
+    wall.style.transform = `translate(${coord[0]}px,${
+      coord[1] - z * scene.size * 0.5
+    }px)`
+  } else {
+    wall.style.transform = `translate(${coord[0]}px,${coord[1]}px)`
+  }
+  return {
+    element: wall,
+    addToScene() {
+      scene.addElement(wall)
+    },
+    removeFromScene() {
+      scene.removeElement(wall)
+    },
+  }
 }
 
-function _addLeftWall(scene, { x, y, z, material, stroke, strokeWidth }) {
-  const points = `0,0 
-    0,${-z * scene.size * 0.5} 
-    ${scene.size * 0.5},${-z * scene.size * 0.5 + scene.size * 0.25}
-    ${scene.size * 0.5},${scene.size * 0.25}`
-  const coord = _getCoord(scene, x, y)
-  _addWall(scene, { points, coord, material, stroke, strokeWidth })
-}
-
-function _addRightWall(scene, { x, y, z, material, stroke, strokeWidth }) {
-  const points = `
-    ${scene.size * 0.5},${scene.size * 0.25} 
-    ${scene.size * 0.5},${scene.size * 0.25 - z * scene.size * 0.5} 
-    ${scene.size},${-z * scene.size * 0.5}
-    ${scene.size},0`
-  const coord = _getCoord(scene, x, y)
-  _addWall(scene, { points, coord, material, stroke, strokeWidth })
-}
-
-function _addTop(scene, { x, y, z, material, stroke, strokeWidth }) {
-  const points = `0,0 
-    ${scene.size * 0.5},${-scene.size * 0.25} 
-    ${scene.size},0 
-    ${scene.size * 0.5},${scene.size * 0.25}`
-  const coord = _getCoord(scene, x, y)
-  const tile = _createElementNS('polygon', {
-    points,
-    fill: material,
-    stroke: stroke,
-    'stroke-width': strokeWidth,
-  })
-  tile.style.transform = `translate(${coord[0]}px,${
-    coord[1] - z * scene.size * 0.5
-  }px)`
-  scene.svg.appendChild(tile)
-  scene.elements.push(tile)
-}
-
-function addBlock(
-  scene,
-  { x, y, z, material = 'grey', stroke = 'black', strokeWidth = 2 }
-) {
-  _addLeftWall(scene, { x, y, z, material, stroke, strokeWidth })
-  _addRightWall(scene, { x, y, z, material, stroke, strokeWidth })
-  _addTop(scene, { x, y, z, material, stroke, strokeWidth })
-}
-
-function removeElement(scene, element) {
-  scene.svg.removeChild(element)
-  scene.elements = scene.elements.filter(el => el !== element)
-}
-
-function clearScene(scene) {
-  scene.elements.forEach(el => scene.svg.removeChild(el))
-  scene.elements = []
-}
-
-export function addGround(
+function createGround(
   scene,
   { rows, cols, material = 'lightgrey', stroke = 'none', strokeWidth = 0 }
 ) {
+  const tiles = []
   for (let x = 0; x < rows; x++) {
     for (let y = 0; y < cols; y++) {
-      addTile(scene, { x, y, material, stroke, strokeWidth })
+      const tile = createTile(scene, { x, y, material, stroke, strokeWidth })
+      tile.addToScene()
+      tiles.push(tile)
     }
+  }
+  return tiles
+}
+
+function createImage(
+  scene,
+  {
+    x,
+    y,
+    widthBlockSize,
+    heightBlockSize,
+    href,
+    offsetX = 0,
+    offsetY = 0,
+    borderWidth = 1,
+    borderColor = 'black',
+  }
+) {
+  // Converte o tamanho dos blocos para pixels
+  const width = widthBlockSize * scene.size
+  const height = heightBlockSize * scene.size
+
+  const coord = _getCoord(scene, x, y)
+
+  // Cria o elemento de imagem
+  const image = _createElementNS('image', {
+    href,
+    width: `${width}px`,
+    height: `${height}px`,
+    x: coord[0] + offsetX * scene.size,
+    y: coord[1] - height + offsetY * scene.size,
+  })
+
+  // Cria um retângulo para a borda
+  const border = _createElementNS('rect', {
+    x: coord[0] + offsetX * scene.size,
+    y: coord[1] - height + offsetY * scene.size,
+    width: `${width}px`,
+    height: `${height}px`,
+    fill: 'none', // Sem preenchimento
+    stroke: borderColor, // Cor da borda
+    'stroke-width': borderWidth, // Largura da borda
+  })
+
+  return {
+    elements: [image, border],
+    addToScene() {
+      scene.addElement(image)
+      scene.addElement(border)
+    },
+    removeFromScene() {
+      scene.removeElement(image)
+      scene.removeElement(border)
+    },
   }
 }
 
@@ -210,20 +319,56 @@ export function IsoApp() {
   let scene = null
 
   return {
-    createScene: ({ width, height, boardSize }) => {
+    createScene({ width, height, boardSize }) {
       scene = createScene({ width, height, boardSize })
-      return scene
     },
-    addTile: params => addTile(scene, params),
-    addBlock: params => addBlock(scene, params),
-    addLeftWall: params => _addLeftWall(scene, params),
-    addRightWall: params => _addRightWall(scene, params),
-    addTop: params => _addTop(scene, params),
-    removeElement: element => removeElement(scene, element),
-    clearScene: () => clearScene(scene),
-    getCoord: (x, y) => _getCoord(scene, x, y),
-    getScene: () => scene,
-    getSvg: () => scene?.svg,
-    addGround: params => addGround(scene, params),
+
+    addTile(options) {
+      if (scene) {
+        return createTile(scene, options)
+      } else {
+        throw new Error('Scene not initialized')
+      }
+    },
+
+    addBlock(options) {
+      if (scene) {
+        return createBlock(scene, options)
+      } else {
+        throw new Error('Scene not initialized')
+      }
+    },
+
+    addGround(options) {
+      if (scene) {
+        return createGround(scene, options)
+      } else {
+        throw new Error('Scene not initialized')
+      }
+    },
+
+    addImage(options) {
+      if (scene) {
+        return createImage(scene, options)
+      } else {
+        throw new Error('Scene not initialized')
+      }
+    },
+
+    clearScene() {
+      if (scene) {
+        scene.clear()
+      } else {
+        throw new Error('Scene not initialized')
+      }
+    },
+
+    removeElement(element) {
+      if (scene) {
+        scene.removeElement(element)
+      } else {
+        throw new Error('Scene not initialized')
+      }
+    },
   }
 }
